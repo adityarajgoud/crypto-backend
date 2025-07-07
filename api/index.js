@@ -3,12 +3,11 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
-const serverless = require("serverless-http");
 
-const coinRoutes = require("./routes/coinRoutes");
-const authRoutes = require("./routes/authRoutes");
-const userRoutes = require("./routes/userRoutes");
-const watchlistRoutes = require("./routes/watchlistRoutes");
+const coinRoutes = require("../routes/coinRoutes");
+const authRoutes = require("../routes/authRoutes");
+const userRoutes = require("../routes/userRoutes");
+const watchlistRoutes = require("../routes/watchlistRoutes");
 
 dotenv.config();
 
@@ -21,13 +20,13 @@ mongoose
   .then(() => console.log("✅ MongoDB Connected"))
   .catch((err) => console.error("MongoDB Error:", err.message));
 
-// Optional: Health check route
-app.get("/", (req, res) => res.send("✅ Crypto backend is running"));
-
 app.use("/api/coins", coinRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/watchlist", watchlistRoutes);
 
-module.exports = app;
-module.exports.handler = serverless(app);
+app.get("/", (req, res) => {
+  res.send("✅ Crypto backend is up!");
+});
+
+module.exports = app; // ✅ IMPORTANT for Vercel
