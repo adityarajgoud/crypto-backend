@@ -103,6 +103,8 @@ router.get("/news", async (req, res) => {
   if (cache.has(cacheKey)) return res.json(cache.get(cacheKey));
 
   try {
+    console.log("✅ NEWS_API_KEY loaded:", process.env.NEWS_API_KEY); // Debug line
+
     const { data } = await axios.get("https://newsapi.org/v2/everything", {
       params: {
         q: "crypto OR bitcoin OR ethereum",
@@ -114,10 +116,14 @@ router.get("/news", async (req, res) => {
       timeout: 8000,
     });
 
+    if (!data.articles || data.articles.length === 0) {
+      console.warn("⚠️ News API returned no articles");
+    }
+
     cache.set(cacheKey, data.articles);
     res.json(data.articles);
   } catch (error) {
-    handleAxiosError(error, "GET /news");
+    console.error("❌ News API Error:", error?.response?.data || error.message);
     res.status(500).json({ message: "Failed to fetch news" });
   }
 });
