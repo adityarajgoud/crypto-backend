@@ -1,4 +1,3 @@
-// ✅ Updated Coin Routes using Official CoinGecko API
 const express = require("express");
 const axios = require("axios");
 const NodeCache = require("node-cache");
@@ -7,15 +6,14 @@ require("dotenv").config();
 
 const cache = new NodeCache({ stdTTL: 60 }); // Cache for 60 seconds
 
-// ✅ Environment check
-if (!process.env.NEWS_API_KEY) {
-  console.error("❌ NEWS_API_KEY is missing from environment!");
-}
-
-// ✅ Axios instance using OFFICIAL CoinGecko API
+// ✅ Axios instance for official CoinGecko
 const axiosCoinGecko = axios.create({
   baseURL: "https://api.coingecko.com/api/v3",
   timeout: 8000,
+  headers: {
+    "User-Agent": "CryptoTracker/1.0 (+https://yourdomain.com)",
+    Accept: "application/json",
+  },
 });
 
 // ✅ Utility: Log and extract meaningful Axios error
