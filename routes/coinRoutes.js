@@ -65,6 +65,7 @@ router.get("/markets", async (req, res) => {
     res.json(data);
   } catch (error) {
     handleAxiosError(error, "GET /markets");
+    console.error("🔍 Headers sent:", axiosRapid.defaults.headers);
     res.status(500).json({ message: "Failed to fetch market data" });
   }
 });
