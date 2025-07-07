@@ -4,9 +4,9 @@ const NodeCache = require("node-cache");
 const router = express.Router();
 require("dotenv").config();
 
-const cache = new NodeCache({ stdTTL: 60 }); // Cache for 60 seconds
+const cache = new NodeCache({ stdTTL: 60 });
 
-// ✅ Axios instance for official CoinGecko
+// Axios instance
 const axiosCoinGecko = axios.create({
   baseURL: "https://api.coingecko.com/api/v3",
   timeout: 8000,
@@ -16,7 +16,7 @@ const axiosCoinGecko = axios.create({
   },
 });
 
-// ✅ Utility: Log and extract meaningful Axios error
+// Error handler
 const handleAxiosError = (error, context) => {
   if (error.response) {
     console.error(`❌ [${context}] Status:`, error.response.status);
@@ -55,20 +55,35 @@ router.get("/markets", async (req, res) => {
   }
 });
 
-// 2. GET /api/coins/:id
-router.get("/:id", async (req, res) => {
-  const { id } = req.params;
-  const cacheKey = `coin-${id}`;
+// ✅ 2. GET /api/coins/news ← moved UP here
+router.get("/news", async (req, res) => {
+  const cacheKey = `news`;
 
   if (cache.has(cacheKey)) return res.json(cache.get(cacheKey));
 
   try {
-    const { data } = await axiosCoinGecko.get(`/coins/${id}`);
-    cache.set(cacheKey, data);
-    res.json(data);
+    console.log("✅ NEWS_API_KEY loaded:", process.env.NEWS_API_KEY);
+
+    const { data } = await axios.get("https://newsapi.org/v2/everything", {
+      params: {
+        q: "crypto OR bitcoin OR ethereum",
+        language: "en",
+        sortBy: "publishedAt",
+        pageSize: 10,
+        apiKey: process.env.NEWS_API_KEY,
+      },
+      timeout: 8000,
+    });
+
+    if (!data.articles || data.articles.length === 0) {
+      console.warn("⚠️ News API returned no articles");
+    }
+
+    cache.set(cacheKey, data.articles);
+    res.json(data.articles);
   } catch (error) {
-    handleAxiosError(error, `GET /:id (${id})`);
-    res.status(500).json({ message: `Failed to fetch coin ${id}` });
+    console.error("❌ News API Error:", error?.response?.data || error.message);
+    res.status(500).json({ message: "Failed to fetch news" });
   }
 });
 
@@ -96,35 +111,20 @@ router.get("/chart/:id", async (req, res) => {
   }
 });
 
-// 4. GET /api/coins/news
-router.get("/news", async (req, res) => {
-  const cacheKey = `news`;
+// 4. GET /api/coins/:id ← keep this last!
+router.get("/:id", async (req, res) => {
+  const { id } = req.params;
+  const cacheKey = `coin-${id}`;
 
   if (cache.has(cacheKey)) return res.json(cache.get(cacheKey));
 
   try {
-    console.log("✅ NEWS_API_KEY loaded:", process.env.NEWS_API_KEY); // Debug line
-
-    const { data } = await axios.get("https://newsapi.org/v2/everything", {
-      params: {
-        q: "crypto OR bitcoin OR ethereum",
-        language: "en",
-        sortBy: "publishedAt",
-        pageSize: 10,
-        apiKey: process.env.NEWS_API_KEY,
-      },
-      timeout: 8000,
-    });
-
-    if (!data.articles || data.articles.length === 0) {
-      console.warn("⚠️ News API returned no articles");
-    }
-
-    cache.set(cacheKey, data.articles);
-    res.json(data.articles);
+    const { data } = await axiosCoinGecko.get(`/coins/${id}`);
+    cache.set(cacheKey, data);
+    res.json(data);
   } catch (error) {
-    console.error("❌ News API Error:", error?.response?.data || error.message);
-    res.status(500).json({ message: "Failed to fetch news" });
+    handleAxiosError(error, `GET /:id (${id})`);
+    res.status(500).json({ message: `Failed to fetch coin ${id}` });
   }
 });
 
