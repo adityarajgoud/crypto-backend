@@ -2,16 +2,15 @@ const express = require("express");
 const axios = require("axios");
 const NodeCache = require("node-cache");
 const router = express.Router();
-
 require("dotenv").config();
 
 const cache = new NodeCache({ stdTTL: 60 }); // Cache for 60 seconds
 
-// ✅ RapidAPI Axios instance
+// ✅ Axios instance for RapidAPI
 const axiosRapid = axios.create({
   baseURL: "https://coingecko.p.rapidapi.com",
   headers: {
-    "X-RapidAPI-Key": process.env.RAPIDAPI_KEY, // ✅ MUST match .env name exactly
+    "X-RapidAPI-Key": process.env.RAPIDAPI_KEY, // ✅ Ensure it's in Render env
     "X-RapidAPI-Host": "coingecko.p.rapidapi.com",
   },
 });
@@ -20,6 +19,9 @@ const axiosRapid = axios.create({
 router.get("/markets", async (req, res) => {
   const { vs_currency = "usd", page = 1 } = req.query;
   const cacheKey = `markets-${vs_currency}-${page}`;
+
+  // ✅ DEBUG LOG — see if Render is reading the key properly
+  console.log("🔍 RAPIDAPI_KEY from env:", process.env.RAPIDAPI_KEY);
 
   if (cache.has(cacheKey)) return res.json(cache.get(cacheKey));
 
@@ -34,6 +36,7 @@ router.get("/markets", async (req, res) => {
         sparkline: true,
       },
     });
+
     cache.set(cacheKey, data);
     res.json(data);
   } catch (error) {
@@ -48,6 +51,7 @@ router.get("/markets", async (req, res) => {
 router.get("/:id", async (req, res) => {
   const { id } = req.params;
   const cacheKey = `coin-${id}`;
+
   if (cache.has(cacheKey)) return res.json(cache.get(cacheKey));
 
   try {
@@ -65,6 +69,7 @@ router.get("/chart/:id", async (req, res) => {
   const { id } = req.params;
   const { vs_currency = "usd", days = 7 } = req.query;
   const cacheKey = `chart-${id}-${vs_currency}-${days}`;
+
   if (cache.has(cacheKey)) return res.json(cache.get(cacheKey));
 
   try {
@@ -74,6 +79,7 @@ router.get("/chart/:id", async (req, res) => {
         days,
       },
     });
+
     cache.set(cacheKey, data);
     res.json(data);
   } catch (err) {
@@ -85,6 +91,7 @@ router.get("/chart/:id", async (req, res) => {
 // 4. GET /api/coins/news → Crypto News
 router.get("/news", async (req, res) => {
   const cacheKey = `news`;
+
   if (cache.has(cacheKey)) return res.json(cache.get(cacheKey));
 
   try {
@@ -97,6 +104,7 @@ router.get("/news", async (req, res) => {
         apiKey: process.env.NEWS_API_KEY,
       },
     });
+
     cache.set(cacheKey, data.articles);
     res.json(data.articles);
   } catch (err) {
