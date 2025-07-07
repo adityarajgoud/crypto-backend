@@ -6,7 +6,7 @@ const router = express.Router();
 
 const cache = new NodeCache({ stdTTL: 60 }); // 60 seconds cache
 
-// Pre-configured axios instance with User-Agent
+// Axios instance with headers
 const axiosWithHeaders = axios.create({
   headers: {
     "User-Agent": "CryptoTrackerApp/1.0 (RenderDeploy)",
@@ -37,7 +37,10 @@ router.get("/markets", async (req, res) => {
     cache.set(cacheKey, data);
     res.json(data);
   } catch (error) {
-    console.error("❌ /markets error:", error.message);
+    console.error("❌ Error fetching market data:");
+    console.error("Status:", error.response?.status);
+    console.error("Data:", error.response?.data);
+    console.error("Message:", error.message);
     res.status(500).json({ message: "Failed to fetch market data" });
   }
 });
@@ -56,7 +59,7 @@ router.get("/:id", async (req, res) => {
     cache.set(cacheKey, data);
     res.json(data);
   } catch (err) {
-    console.error(`❌ /${id} error:`, err.message);
+    console.error(`❌ Error fetching coin ${id}:`, err.message);
     res.status(500).json({ message: `Failed to fetch coin ${id}` });
   }
 });
@@ -82,7 +85,7 @@ router.get("/chart/:id", async (req, res) => {
     cache.set(cacheKey, data);
     res.json(data);
   } catch (err) {
-    console.error(`❌ /chart/${id} error:`, err.message);
+    console.error(`❌ Error fetching chart for ${id}:`, err.message);
     res.status(500).json({ message: `Failed to fetch chart for ${id}` });
   }
 });
@@ -108,7 +111,7 @@ router.get("/news", async (req, res) => {
     cache.set(cacheKey, data.articles);
     res.json(data.articles);
   } catch (err) {
-    console.error("❌ /news error:", err.message);
+    console.error("❌ Error fetching news:", err.message);
     res.status(500).json({ message: "Failed to fetch news" });
   }
 });
