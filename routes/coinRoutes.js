@@ -6,22 +6,46 @@ require("dotenv").config();
 
 const cache = new NodeCache({ stdTTL: 60 }); // Cache for 60 seconds
 
+// ✅ Environment check
+if (!process.env.RAPIDAPI_KEY) {
+  console.error("❌ RAPIDAPI_KEY is missing from environment!");
+}
+if (!process.env.NEWS_API_KEY) {
+  console.error("❌ NEWS_API_KEY is missing from environment!");
+}
+
 // ✅ Axios instance for RapidAPI
 const axiosRapid = axios.create({
   baseURL: "https://coingecko.p.rapidapi.com",
+  timeout: 8000,
   headers: {
-    "X-RapidAPI-Key": process.env.RAPIDAPI_KEY, // ✅ Ensure it's in Render env
+    "X-RapidAPI-Key": process.env.RAPIDAPI_KEY,
     "X-RapidAPI-Host": "coingecko.p.rapidapi.com",
   },
 });
+
+// ✅ Utility: Log and extract meaningful Axios error
+const handleAxiosError = (error, context) => {
+  if (error.response) {
+    console.error(`❌ [${context}] Status:`, error.response.status);
+    console.error(`❌ [${context}] Data:`, error.response.data);
+  } else if (error.request) {
+    console.error(`❌ [${context}] No response received`);
+  } else {
+    console.error(`❌ [${context}] Error:`, error.message);
+  }
+};
 
 // 1. GET /api/coins/markets
 router.get("/markets", async (req, res) => {
   const { vs_currency = "usd", page = 1 } = req.query;
   const cacheKey = `markets-${vs_currency}-${page}`;
 
-  // ✅ DEBUG LOG — see if Render is reading the key properly
-  console.log("🔍 RAPIDAPI_KEY from env:", process.env.RAPIDAPI_KEY);
+  console.log(
+    "🔍 Using RAPIDAPI_KEY:",
+    process.env.RAPIDAPI_KEY?.slice(0, 5),
+    "..."
+  );
 
   if (cache.has(cacheKey)) return res.json(cache.get(cacheKey));
 
@@ -40,14 +64,12 @@ router.get("/markets", async (req, res) => {
     cache.set(cacheKey, data);
     res.json(data);
   } catch (error) {
-    console.error("❌ Error fetching market data:");
-    console.error("Status:", error.response?.status);
-    console.error("Data:", error.response?.data);
+    handleAxiosError(error, "GET /markets");
     res.status(500).json({ message: "Failed to fetch market data" });
   }
 });
 
-// 2. GET /api/coins/:id → Coin details
+// 2. GET /api/coins/:id
 router.get("/:id", async (req, res) => {
   const { id } = req.params;
   const cacheKey = `coin-${id}`;
@@ -58,13 +80,13 @@ router.get("/:id", async (req, res) => {
     const { data } = await axiosRapid.get(`/coins/${id}`);
     cache.set(cacheKey, data);
     res.json(data);
-  } catch (err) {
-    console.error(`❌ Error fetching coin ${id}:`, err.message);
+  } catch (error) {
+    handleAxiosError(error, `GET /:id (${id})`);
     res.status(500).json({ message: `Failed to fetch coin ${id}` });
   }
 });
 
-// 3. GET /api/coins/chart/:id → Chart data
+// 3. GET /api/coins/chart/:id
 router.get("/chart/:id", async (req, res) => {
   const { id } = req.params;
   const { vs_currency = "usd", days = 7 } = req.query;
@@ -82,13 +104,13 @@ router.get("/chart/:id", async (req, res) => {
 
     cache.set(cacheKey, data);
     res.json(data);
-  } catch (err) {
-    console.error(`❌ Error fetching chart for ${id}:`, err.message);
+  } catch (error) {
+    handleAxiosError(error, `GET /chart/${id}`);
     res.status(500).json({ message: `Failed to fetch chart for ${id}` });
   }
 });
 
-// 4. GET /api/coins/news → Crypto News
+// 4. GET /api/coins/news
 router.get("/news", async (req, res) => {
   const cacheKey = `news`;
 
@@ -103,12 +125,13 @@ router.get("/news", async (req, res) => {
         pageSize: 10,
         apiKey: process.env.NEWS_API_KEY,
       },
+      timeout: 8000,
     });
 
     cache.set(cacheKey, data.articles);
     res.json(data.articles);
-  } catch (err) {
-    console.error("❌ Error fetching news:", err.message);
+  } catch (error) {
+    handleAxiosError(error, "GET /news");
     res.status(500).json({ message: "Failed to fetch news" });
   }
 });
