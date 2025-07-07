@@ -11,7 +11,8 @@ const cache = new NodeCache({ stdTTL: 60 }); // 60 seconds cache
 const axiosRapid = axios.create({
   baseURL: "https://coingecko.p.rapidapi.com",
   headers: {
-    "X-RapidAPI-Key": process.env.RAPIDAPI_KEY,
+    "X-RapidAPI-Key": process.env.RAPID_API_KEY, // ✅ correct key
+
     "X-RapidAPI-Host": "coingecko.p.rapidapi.com",
   },
 });
