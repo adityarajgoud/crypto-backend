@@ -6,9 +6,10 @@ const router = express.Router();
 
 const cache = new NodeCache({ stdTTL: 60 }); // 60 seconds cache
 
+// Pre-configured axios instance with User-Agent
 const axiosWithHeaders = axios.create({
   headers: {
-    "User-Agent": "Mozilla/5.0 (CryptoTrackerApp)",
+    "User-Agent": "CryptoTrackerApp/1.0 (RenderDeploy)",
   },
 });
 
@@ -36,6 +37,7 @@ router.get("/markets", async (req, res) => {
     cache.set(cacheKey, data);
     res.json(data);
   } catch (error) {
+    console.error("❌ /markets error:", error.message);
     res.status(500).json({ message: "Failed to fetch market data" });
   }
 });
@@ -54,6 +56,7 @@ router.get("/:id", async (req, res) => {
     cache.set(cacheKey, data);
     res.json(data);
   } catch (err) {
+    console.error(`❌ /${id} error:`, err.message);
     res.status(500).json({ message: `Failed to fetch coin ${id}` });
   }
 });
@@ -79,11 +82,12 @@ router.get("/chart/:id", async (req, res) => {
     cache.set(cacheKey, data);
     res.json(data);
   } catch (err) {
+    console.error(`❌ /chart/${id} error:`, err.message);
     res.status(500).json({ message: `Failed to fetch chart for ${id}` });
   }
 });
 
-// 4. GET /api/news → Forward to NewsAPI
+// 4. GET /api/coins/news → Crypto news
 router.get("/news", async (req, res) => {
   const cacheKey = `news`;
   if (cache.has(cacheKey)) return res.json(cache.get(cacheKey));
@@ -104,6 +108,7 @@ router.get("/news", async (req, res) => {
     cache.set(cacheKey, data.articles);
     res.json(data.articles);
   } catch (err) {
+    console.error("❌ /news error:", err.message);
     res.status(500).json({ message: "Failed to fetch news" });
   }
 });
