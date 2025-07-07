@@ -32,9 +32,14 @@ router.post("/signup", async (req, res) => {
     if (exists) return res.status(400).json({ message: "User already exists" });
 
     const hashed = await bcrypt.hash(password, 10);
-    await User.create({ email, password: hashed });
+    const newUser = await User.create({ email, password: hashed });
 
-    res.status(201).json({ message: "User created successfully" });
+    // ✅ Generate and return JWT token
+    const token = jwt.sign({ userId: newUser._id }, JWT_SECRET, {
+      expiresIn: "7d",
+    });
+
+    res.status(201).json({ token }); // ✅ Return token
   } catch (err) {
     console.error("❌ Signup error:", err.message);
     res.status(500).json({ message: "Signup failed" });
@@ -85,7 +90,7 @@ router.post("/forgot-password", async (req, res) => {
     await user.save();
 
     const resetURL = `http://localhost:3001/reset-password/${token}`;
-    // ⚠️ Update if deploying frontend
+    // ⚠️ Update this if frontend is hosted on another domain
 
     await transporter.sendMail({
       to: user.email,
