@@ -1,18 +1,17 @@
-// backend/routes/coinRoutes.js
 const express = require("express");
 const axios = require("axios");
 const NodeCache = require("node-cache");
 const router = express.Router();
 
 require("dotenv").config();
-const cache = new NodeCache({ stdTTL: 60 }); // 60 seconds cache
 
-// RapidAPI Axios instance
+const cache = new NodeCache({ stdTTL: 60 }); // Cache for 60 seconds
+
+// ✅ RapidAPI Axios instance
 const axiosRapid = axios.create({
   baseURL: "https://coingecko.p.rapidapi.com",
   headers: {
-    "X-RapidAPI-Key": process.env.RAPID_API_KEY, // ✅ correct key
-
+    "X-RapidAPI-Key": process.env.RAPIDAPI_KEY, // ✅ MUST match .env name exactly
     "X-RapidAPI-Host": "coingecko.p.rapidapi.com",
   },
 });
@@ -45,7 +44,7 @@ router.get("/markets", async (req, res) => {
   }
 });
 
-// 2. GET /api/coins/:id
+// 2. GET /api/coins/:id → Coin details
 router.get("/:id", async (req, res) => {
   const { id } = req.params;
   const cacheKey = `coin-${id}`;
@@ -61,7 +60,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// 3. GET /api/coins/chart/:id
+// 3. GET /api/coins/chart/:id → Chart data
 router.get("/chart/:id", async (req, res) => {
   const { id } = req.params;
   const { vs_currency = "usd", days = 7 } = req.query;
@@ -83,7 +82,7 @@ router.get("/chart/:id", async (req, res) => {
   }
 });
 
-// 4. GET /api/coins/news
+// 4. GET /api/coins/news → Crypto News
 router.get("/news", async (req, res) => {
   const cacheKey = `news`;
   if (cache.has(cacheKey)) return res.json(cache.get(cacheKey));
