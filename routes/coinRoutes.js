@@ -6,6 +6,12 @@ const router = express.Router();
 
 const cache = new NodeCache({ stdTTL: 60 }); // 60 seconds cache
 
+const axiosWithHeaders = axios.create({
+  headers: {
+    "User-Agent": "Mozilla/5.0 (CryptoTrackerApp)",
+  },
+});
+
 // 1. GET /api/coins/markets
 router.get("/markets", async (req, res) => {
   const { vs_currency = "usd", page = 1 } = req.query;
@@ -14,7 +20,7 @@ router.get("/markets", async (req, res) => {
   if (cache.has(cacheKey)) return res.json(cache.get(cacheKey));
 
   try {
-    const { data } = await axios.get(
+    const { data } = await axiosWithHeaders.get(
       "https://api.coingecko.com/api/v3/coins/markets",
       {
         params: {
@@ -42,7 +48,7 @@ router.get("/:id", async (req, res) => {
   if (cache.has(cacheKey)) return res.json(cache.get(cacheKey));
 
   try {
-    const { data } = await axios.get(
+    const { data } = await axiosWithHeaders.get(
       `https://api.coingecko.com/api/v3/coins/${id}`
     );
     cache.set(cacheKey, data);
@@ -61,7 +67,7 @@ router.get("/chart/:id", async (req, res) => {
   if (cache.has(cacheKey)) return res.json(cache.get(cacheKey));
 
   try {
-    const { data } = await axios.get(
+    const { data } = await axiosWithHeaders.get(
       `https://api.coingecko.com/api/v3/coins/${id}/market_chart`,
       {
         params: {
@@ -83,15 +89,18 @@ router.get("/news", async (req, res) => {
   if (cache.has(cacheKey)) return res.json(cache.get(cacheKey));
 
   try {
-    const { data } = await axios.get("https://newsapi.org/v2/everything", {
-      params: {
-        q: "crypto OR bitcoin OR ethereum",
-        language: "en",
-        sortBy: "publishedAt",
-        pageSize: 10,
-        apiKey: process.env.NEWS_API_KEY, // ⬅️ Store your key in .env
-      },
-    });
+    const { data } = await axiosWithHeaders.get(
+      "https://newsapi.org/v2/everything",
+      {
+        params: {
+          q: "crypto OR bitcoin OR ethereum",
+          language: "en",
+          sortBy: "publishedAt",
+          pageSize: 10,
+          apiKey: process.env.NEWS_API_KEY,
+        },
+      }
+    );
     cache.set(cacheKey, data.articles);
     res.json(data.articles);
   } catch (err) {
