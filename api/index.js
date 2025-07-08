@@ -1,4 +1,3 @@
-// api/index.js
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
@@ -15,8 +14,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// ✅ Add connection options here
 mongoose
-  .connect(process.env.MONGODB_URI)
+  .connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then(() => console.log("✅ MongoDB Connected"))
   .catch((err) => console.error("MongoDB Error:", err.message));
 
@@ -29,4 +32,4 @@ app.get("/", (req, res) => {
   res.send("✅ Crypto backend is up!");
 });
 
-module.exports = app; // ✅ IMPORTANT for Vercel
+module.exports = app;
