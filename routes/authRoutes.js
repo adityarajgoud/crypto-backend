@@ -9,7 +9,7 @@ const User = require("../models/User");
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET;
 
-// ✅ Reusable email sender
+// ✅ Email transporter (Gmail SMTP)
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -19,35 +19,40 @@ const transporter = nodemailer.createTransport({
 });
 
 // =============================
-// 👉 Signup
+// 👉 Signup Route
 // =============================
 router.post("/signup", async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, name } = req.body;
 
-  if (!email || !password)
+  if (!email || !password) {
     return res.status(400).json({ message: "Email and password are required" });
+  }
 
   try {
-    const exists = await User.findOne({ email });
-    if (exists) return res.status(400).json({ message: "User already exists" });
+    const existingUser = await User.findOne({ email });
+    if (existingUser)
+      return res.status(400).json({ message: "User already exists" });
 
     const hashed = await bcrypt.hash(password, 10);
-    const newUser = await User.create({ email, password: hashed });
+    const newUser = await User.create({
+      email,
+      password: hashed,
+      name: name || email.split("@")[0], // default name if not provided
+    });
 
-    // ✅ Generate and return JWT token
     const token = jwt.sign({ userId: newUser._id }, JWT_SECRET, {
       expiresIn: "7d",
     });
 
-    res.status(201).json({ token }); // ✅ Return token
+    res.status(201).json({ token });
   } catch (err) {
-    console.error("❌ Signup error:", err.message);
+    console.error("❌ Signup error:", err);
     res.status(500).json({ message: "Signup failed" });
   }
 });
 
 // =============================
-// 👉 Login
+// 👉 Login Route
 // =============================
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
@@ -74,7 +79,7 @@ router.post("/login", async (req, res) => {
 });
 
 // =============================
-// 👉 Forgot Password
+// 👉 Forgot Password Route
 // =============================
 router.post("/forgot-password", async (req, res) => {
   const { email } = req.body;
@@ -89,18 +94,17 @@ router.post("/forgot-password", async (req, res) => {
     user.tokenExpiry = Date.now() + 60 * 60 * 1000; // 1 hour
     await user.save();
 
-    const resetURL = `http://localhost:3001/reset-password/${token}`;
-    // ⚠️ Update this if frontend is hosted on another domain
+    const resetURL = `${process.env.FRONTEND_URL}/reset-password/${token}`;
 
     await transporter.sendMail({
       to: user.email,
       from: process.env.EMAIL_USER,
       subject: "Reset your CryptoTracker password",
       html: `
-        <h3>Reset Password Request</h3>
-        <p>Click the button below to reset your password:</p>
+        <h3>Password Reset Request</h3>
+        <p>Click below to reset your password:</p>
         <a href="${resetURL}" style="padding:10px 15px; background:#2d72d9; color:#fff; text-decoration:none;">Reset Password</a>
-        <p>This link will expire in 1 hour.</p>
+        <p>This link is valid for 1 hour.</p>
       `,
     });
 
@@ -112,7 +116,7 @@ router.post("/forgot-password", async (req, res) => {
 });
 
 // =============================
-// 👉 Reset Password
+// 👉 Reset Password Route
 // =============================
 router.post("/reset-password", async (req, res) => {
   const { token, newPassword } = req.body;
