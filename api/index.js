@@ -31,6 +31,7 @@ app.use("/api/watchlist", watchlistRoutes);
 app.get("/", (req, res) => {
   res.send("✅ Crypto backend is up!");
 });
+// ping
 app.get("/api/ping", (req, res) => {
   res.status(200).send("pong");
 });
