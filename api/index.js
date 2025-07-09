@@ -11,10 +11,17 @@ const watchlistRoutes = require("../routes/watchlistRoutes");
 dotenv.config();
 
 const app = express();
+
+// Keep-alive for serverless (helps on mobile)
+app.use((req, res, next) => {
+  res.setHeader("Connection", "keep-alive");
+  next();
+});
+
 app.use(cors());
 app.use(express.json());
 
-// ✅ Add connection options here
+// MongoDB connection
 mongoose
   .connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
@@ -23,17 +30,24 @@ mongoose
   .then(() => console.log("✅ MongoDB Connected"))
   .catch((err) => console.error("MongoDB Error:", err.message));
 
+// Routes
 app.use("/api/coins", coinRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/watchlist", watchlistRoutes);
 
+// Health check
+app.get("/api/ping", (req, res) => {
+  res.status(200).send("pong");
+});
+
 app.get("/", (req, res) => {
   res.send("✅ Crypto backend is up!");
 });
-// ping
-app.get("/api/ping", (req, res) => {
-  res.status(200).send("pong");
+
+// Catch-all 404
+app.use((req, res) => {
+  res.status(404).json({ message: "API route not found" });
 });
 
 module.exports = app;
