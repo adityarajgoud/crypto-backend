@@ -32,7 +32,7 @@ router.post("/chat", async (req, res) => {
           content: prompt,
         },
       ],
-      model: "llama3-8b-8192", // Fast and highly capable for chat
+      model: "llama-3.1-8b-instant", // Fast and highly capable for chat
       temperature: 0.7,
       max_tokens: 500,
     });
@@ -41,11 +41,9 @@ router.post("/chat", async (req, res) => {
     res.json({ reply });
   } catch (error) {
     console.error("❌ Groq API Error:", error.message);
-    res
-      .status(500)
-      .json({
-        message: "The AI analyst is busy. Please try again in a moment.",
-      });
+    res.status(500).json({
+      message: "The AI analyst is busy. Please try again in a moment.",
+    });
   }
 });
 
