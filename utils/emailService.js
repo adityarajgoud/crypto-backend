@@ -10,7 +10,7 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendResetEmail = async (to, resetToken) => {
-  const resetLink = `http://localhost:3001/reset-password/${resetToken}`; // Change if frontend URL is different
+  const resetLink = `https://coiniq.netlify.app/reset-password/${resetToken}`; // Change if frontend URL is different
 
   const mailOptions = {
     from: `"Crypto Tracker" <${process.env.EMAIL_USER}>`,

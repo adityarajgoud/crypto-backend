@@ -7,7 +7,7 @@ const coinRoutes = require("../routes/coinRoutes");
 const authRoutes = require("../routes/authRoutes");
 const userRoutes = require("../routes/userRoutes");
 const watchlistRoutes = require("../routes/watchlistRoutes");
-
+const aiRoutes = require("../routes/aiRoutes");
 dotenv.config();
 
 const app = express();
@@ -35,7 +35,7 @@ app.use("/api/coins", coinRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/watchlist", watchlistRoutes);
-
+app.use("/api/ai", aiRoutes);
 // Health check
 app.get("/api/ping", (req, res) => {
   res.status(200).send("pong");
