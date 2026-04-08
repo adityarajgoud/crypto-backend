@@ -1,10 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const { OpenAI } = require("openai");
+const Groq = require("groq-sdk");
 require("dotenv").config();
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+// Initialize Groq with your API Key
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
 });
 
 router.post("/chat", async (req, res) => {
@@ -15,28 +16,36 @@ router.post("/chat", async (req, res) => {
   }
 
   try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+    const chatCompletion = await groq.chat.completions.create({
       messages: [
         {
           role: "system",
-          content: `You are the COINIQ Intelligence Assistant, a professional crypto market analyst. 
-          Provide insightful, data-driven advice on cryptocurrencies. 
-          If asked for long-term holds, suggest established assets like BTC or ETH. 
-          Always include a short disclaimer that this is not financial advice. 
-          Keep your tone professional, concise, and helpful.`,
+          content: `You are the COINIQ Intelligence Assistant. 
+          You are a world-class cryptocurrency analyst. 
+          Provide technical yet easy-to-understand advice. 
+          If asked for long-term buys, suggest strong projects like Bitcoin (BTC) and Ethereum (ETH).
+          Always finish with the phrase: "⚠️ Disclaimer: This is not financial advice." 
+          Keep responses professional and concise.`,
         },
-        { role: "user", content: prompt },
+        {
+          role: "user",
+          content: prompt,
+        },
       ],
-      max_tokens: 300,
+      model: "llama3-8b-8192", // Fast and highly capable for chat
+      temperature: 0.7,
+      max_tokens: 500,
     });
 
-    res.json({ reply: response.choices[0].message.content });
+    const reply = chatCompletion.choices[0]?.message?.content || "";
+    res.json({ reply });
   } catch (error) {
-    console.error("❌ OpenAI Error:", error.message);
+    console.error("❌ Groq API Error:", error.message);
     res
       .status(500)
-      .json({ message: "The AI is currently undergoing maintenance." });
+      .json({
+        message: "The AI analyst is busy. Please try again in a moment.",
+      });
   }
 });
 
